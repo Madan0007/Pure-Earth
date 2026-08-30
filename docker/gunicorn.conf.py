@@ -1,6 +1,5 @@
 # Gunicorn configuration for Horilla-HR
 # This file provides advanced configuration options for the WSGI server
-
 import multiprocessing
 import os
 
@@ -10,16 +9,24 @@ host = "0.0.0.0"
 port = int(os.environ.get("PORT", "8000"))
 
 # Worker settings
-workers = int(
-    os.environ.get(
-        "GUNICORN_WORKERS", max(2, min(multiprocessing.cpu_count() * 2 + 1, 8))
-    )
-)
+#
+# multiprocessing.cpu_count() reflects the host's CPU count, not the memory
+# limit of the container — on small/free-tier instances (e.g. Render's 512MB
+# plan) that can still report several cores, producing far more workers than
+# the available memory can hold. Each worker loads a full copy of the Django
+# app (including heavy deps like spacy's en_core_web_sm), so too many workers
+# reliably gets the process OOM-killed on constrained instances.
+#
+# Default to a conservative 2 workers; override explicitly per-environment
+# with GUNICORN_WORKERS (e.g. set to 1 on Render's free 512MB plan, or higher
+# on a bigger instance) rather than relying on CPU-count autodetection.
+workers = int(os.environ.get("GUNICORN_WORKERS", 2))
 worker_class = "gthread"
-threads = 4
+threads = int(os.environ.get("GUNICORN_THREADS", 2))
 worker_connections = 1000
 max_requests = 1000
 max_requests_jitter = 50
+
 # preload_app is disabled with gthread workers to avoid ORM connection issues
 preload_app = False
 
