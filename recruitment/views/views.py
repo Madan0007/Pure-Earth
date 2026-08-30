@@ -3417,9 +3417,23 @@ def delete_reject_reason(request):
     return HttpResponse(f"<script>{script}</script>")
 
 
-# Loaded once per worker process at import time (spaCy model load is slow;
-# never call spacy.load() inside a request-handling function).
-_resume_nlp = spacy.load("en_core_web_sm")
+# Lazily loaded on first actual use, then cached for the lifetime of the
+# process. Loading en_core_web_sm is slow and memory-heavy; loading it eagerly
+# at *import* time meant every process that imports this module -- migrate,
+# collectstatic, and every Gunicorn worker independently on boot, none of
+# which necessarily ever handle a resume upload -- paid that cost immediately
+# and concurrently, which reliably OOMs small instances (e.g. Render's free
+# 512MB tier). Deferring the load to first call means only a process that
+# actually parses a resume pays for it, and only once.
+_resume_nlp_instance = None
+
+
+def _resume_nlp(text):
+    """Lazily load and cache the spaCy model, then run it on `text`."""
+    global _resume_nlp_instance
+    if _resume_nlp_instance is None:
+        _resume_nlp_instance = spacy.load("en_core_web_sm")
+    return _resume_nlp_instance(text)
 
 
 def extract_text_with_font_info(pdf):
