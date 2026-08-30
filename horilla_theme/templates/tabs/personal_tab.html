@@ -1,4 +1,4 @@
-{% load static i18n %}
+{% load static i18n nepali_date %}
 
 <div class="grid gap-4 lg:grid-cols-12">
     <!-- Personal Information -->
@@ -17,7 +17,7 @@
                         <div class="flex items-baseline justify-between gap-3 py-2">
                             <dt class="text-xs font-medium text-color-600">{% trans "Date of birth" %}</dt>
                             <dd class="text-right text-sm {% if employee.get_employee_dob %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
-                                {{ employee.get_employee_dob|default:_("Not set") }}
+                                {{ employee.get_employee_dob|default:_("Not set") }}{% if employee.dob %} ({{ employee.dob|to_bs }}){% endif %}
                             </dd>
                         </div>
                         <div class="flex items-baseline justify-between gap-3 py-2">
