@@ -20,11 +20,7 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
 done
 echo "PostgreSQL is ready!"
 
-# Every shipped default (.env.dist, docker-compose.yml's own dev default, and
-# historical leaked keys) is a known, public string -- never a real secret.
-# If SECRET_KEY is unset or matches one of those, generate a random one and
-# persist it in the media volume so it survives container restarts instead of
-# invalidating every session/JWT on each `docker compose up`.
+# Handle Secret Key setup
 SECRET_KEY_FILE="/app/media/.generated_secret_key"
 case "${SECRET_KEY:-}" in
   ""|"django-insecure-default-key"|"dev-secret-key-change-in-production"|"django-insecure-j8op9)1q8\$1&0^s&p*_0%d#pr@w9qj@1o=3#@d=a(^@9@zd@%j"|change-me*|django-insecure-*)
@@ -42,20 +38,23 @@ case "${SECRET_KEY:-}" in
     ;;
 esac
 
-# Run migrations
+# 1. Run migrations FIRST so database tables exist
 python manage.py migrate --noinput
 
-# Collect static files.
-#
-# --clear is deliberate: STATIC_ROOT is a named volume that outlives the image,
-# and plain collectstatic leaves anything it considers unmodified in place. With
-# CompressedStaticFilesStorage that includes the pre-compressed .gz/.br
-# siblings, so after an upgrade WhiteNoise happily served a previous release's
-# global.js.gz to every browser (which all send Accept-Encoding: gzip) while
-# curl, getting the identity encoding, saw the current file — JS functions
-# "not defined" and half-rendered pages that looked fine to any check that
-# bypassed static serving. Wiping first keeps what we serve equal to the image.
+# 2. WIPE ALL DEMO DATA (Flushes database tables completely)
+python manage.py flush --no-input
+
+# 3. Auto-create your clean admin user safely via Django Shell
+python manage.py shell -c "
+from django.contrib.auth import get_user_model;
+User = get_user_model();
+if not User.objects.filter(username='Madan').exists():
+    User.objects.create_superuser('Madan', 'madandahal0001@gmail.com', 'Pure123456')
+    print('Superuser Madan created successfully!')
+" || true
+
+# 4. Collect static files
 python manage.py collectstatic --noinput --clear
 
 echo "Starting server..."
-exec "$@"
+exec gunicorn horilla.wsgi:application --bind 0.0.0.0:${PORT:-8000}
