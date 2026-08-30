@@ -1,0 +1,87 @@
+# Core Django
+Django==5.2
+django-environ
+psycopg2-binary==2.9.10
+
+# Django extensions
+django-apscheduler
+django-auditlog
+django-cors-headers
+django-filter
+django-import-export
+django-mathfilters
+django-model-utils
+django-redis==5.4.0
+django-simple-history
+django-storages
+django-widget-tweaks
+
+# REST API
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.5.0
+drf-yasg
+
+# Data processing
+numpy
+openpyxl
+pandas
+XlsxWriter
+
+# PDF handling
+pdfkit
+PyMuPDF
+reportlab==4.0.9
+xhtml2pdf
+
+# Web scraping & HTML
+beautifulsoup4
+requests
+requests-oauthlib
+
+# Google integration
+google-api-python-client
+google-auth-oauthlib
+google-cloud-storage==3.0.0
+
+# Geolocation
+geopy
+
+# Biometric device integration
+pyzk==0.9
+
+# Image handling
+pillow
+
+# Security & encryption
+cryptography==44.0.2
+
+# Notifications
+swapper
+
+# Static files
+whitenoise==6.9.0
+
+# Background tasks
+APScheduler
+
+# Date & time
+python-dateutil
+pytz
+
+# Internationalization & NLP
+arabic-reshaper
+click
+phonenumbers==9.0.37
+pycountry==24.6.1
+python-bidi
+rapidfuzz==3.9.6
+spacy==3.7.5
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+
+# Misc
+bleach==6.2.0
+gunicorn==23.0.0
+packaging
+
+# Testing
+coverage>=7.0
