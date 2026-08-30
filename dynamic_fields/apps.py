@@ -25,9 +25,9 @@ class DynamicFieldsConfig(AppConfig):
         from dynamic_fields.models import DynamicField
 
         try:
-            dynamic_objects = DynamicField.objects.filter()
             # Ensure this logic only runs when the server is started (and only once)
             if any(cmd in sys.argv for cmd in ["runserver", "shell"]):
+                dynamic_objects = DynamicField.objects.filter()
                 fields_to_remove = DynamicField.objects.filter(remove_column=True)
                 for df in fields_to_remove:
                     try:
