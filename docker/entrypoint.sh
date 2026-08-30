@@ -1,11 +1,8 @@
 #!/bin/bash
 set -e
-
 echo "Starting Horilla HR..."
-
 DB_HOST="${DB_HOST:-db}"
 DB_PORT="${DB_PORT:-5432}"
-
 # Wait for PostgreSQL to be ready (with timeout)
 echo "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
 MAX_TRIES=30
@@ -19,7 +16,6 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
   sleep 1
 done
 echo "PostgreSQL is ready!"
-
 # Handle Secret Key setup
 SECRET_KEY_FILE="/app/media/.generated_secret_key"
 case "${SECRET_KEY:-}" in
@@ -41,19 +37,39 @@ esac
 # 1. Run migrations FIRST so database tables exist
 python manage.py migrate --noinput
 
-# 2. WIPE ALL DEMO DATA (Flushes database tables completely)
-python manage.py flush --no-input
+# NOTE: this used to run `python manage.py flush --no-input` here, wiping
+# every row in every table on EVERY container start (every deploy, every
+# crash-restart). Removed -- it was silently erasing all production data
+# repeatedly. If you ever need to reset the database on purpose, run
+# `python manage.py flush` manually and deliberately from Render's Shell tab,
+# never as part of routine startup.
 
-# 3. Auto-create your clean admin user safely via Django Shell
-python manage.py shell -c "
-from django.contrib.auth import get_user_model;
-User = get_user_model();
-if not User.objects.filter(username='Madan').exists():
-    User.objects.create_superuser('Madan', 'madandahal0001@gmail.com', 'Pure123456')
-    print('Superuser Madan created successfully!')
+# 2. Auto-create a default superuser ONLY if one doesn't already exist, and
+# ONLY from environment variables. The previous version hardcoded a username
+# and plaintext password directly in this script, which lives in a public
+# git repo -- effectively publishing a valid admin credential to anyone who
+# finds the repo. Set DJANGO_SUPERUSER_USERNAME / DJANGO_SUPERUSER_PASSWORD
+# (and optionally DJANGO_SUPERUSER_EMAIL) on Render instead. This block does
+# nothing once any superuser exists, so it's safe to leave in on every boot.
+if [ -n "${DJANGO_SUPERUSER_USERNAME:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
+  python manage.py shell -c "
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(is_superuser=True).exists():
+    User.objects.create_superuser(
+        '${DJANGO_SUPERUSER_USERNAME}',
+        '${DJANGO_SUPERUSER_EMAIL:-admin@example.com}',
+        '${DJANGO_SUPERUSER_PASSWORD}',
+    )
+    print('Superuser created successfully!')
+else:
+    print('A superuser already exists; skipping creation.')
 " || true
+else
+  echo "DJANGO_SUPERUSER_USERNAME/PASSWORD not set; skipping superuser auto-creation."
+fi
 
-# 4. Collect static files
+# 3. Collect static files
 python manage.py collectstatic --noinput --clear
 
 echo "Starting server..."
