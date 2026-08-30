@@ -409,7 +409,7 @@
                             <div class="flex items-baseline justify-between gap-3 py-2">
                                 <dt class="text-xs font-medium text-color-600">{% trans "Joining Date" %}</dt>
                                 <dd class="text-right text-sm dateformat_changer {% if work_info.date_joining %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
-                                    {{ work_info.date_joining|default:_("Not set") }}
+                                    {{ work_info.date_joining|default:_("Not set") }}{% if work_info.date_joining %} ({{ work_info.date_joining|to_bs }}){% endif %}
                                 </dd>
                             </div>
                             <div class="flex items-start justify-between gap-3 py-2">
