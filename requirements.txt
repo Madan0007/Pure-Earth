@@ -67,6 +67,7 @@ APScheduler
 # Date & time
 python-dateutil
 pytz
+nepali_datetime
 
 # Internationalization & NLP
 arabic-reshaper
