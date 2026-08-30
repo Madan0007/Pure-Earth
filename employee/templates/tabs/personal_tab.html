@@ -1,4 +1,4 @@
-{% load i18n %} {% load static %} {% load horillafilters %}
+{% load i18n %} {% load static %} {% load horillafilters %} {% load nepali_date %}
 <div class="row">
 	<div class="col-sm-12 col-md-12 col-lg-4">
 		<div class="oh-card oh-card--margin">
@@ -15,7 +15,7 @@
 							<span>{% trans "Date of Birth" %}</span>
 						</span>
 						<span
-							class="oh-profile__info-value dateformat_changer">{{employee.get_employee_dob|default:_("None")}}</span>
+							class="oh-profile__info-value dateformat_changer">{{employee.get_employee_dob|default:_("None")}} {% if employee.dob %}({{ employee.dob|to_bs }}){% endif %}</span>
 					</li>
 
 					<li class="oh-profile__card-info-item">
