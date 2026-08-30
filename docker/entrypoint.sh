@@ -38,72 +38,23 @@ case "${SECRET_KEY:-}" in
     ;;
 esac
 
-# --- Start the server FIRST so the platform's port scan (Render, etc.) sees
-# an open port immediately, instead of timing out while migrate/collectstatic
-# run. Runs in the background; we bring migrate/collectstatic up after it,
-# then reload Gunicorn workers so they pick up the fresh static manifest.
-echo "Starting server..."
-rm -f /tmp/gunicorn.pid
-"$@" &
-SERVER_PID=$!
-
-trap 'echo "Forwarding signal to server (pid $SERVER_PID)"; kill -TERM "$SERVER_PID" 2>/dev/null; wait "$SERVER_PID"' TERM INT
-
-# Run migrations
-echo "Running migrations..."
+# 1. Run migrations FIRST so database tables exist
 python manage.py migrate --noinput
 
-# NOTE: the previous version of this script ran `python manage.py flush
-# --no-input` here on every single boot. flush wipes every row in every
-# table. On a platform like Render, the container restarts on every deploy
-# AND after any crash -- so this was silently erasing all production data
-# (every employee, every leave request, everything) each time the app
-# restarted, not just on first setup. It has been removed. If you need to
-# reset the database, run `python manage.py flush` manually and deliberately
-# from Render's Shell tab -- never as part of routine startup.
+# 2. WIPE ALL DEMO DATA (Flushes database tables completely)
+python manage.py flush --no-input
 
-# Create a default superuser ONLY if no superuser exists yet, and ONLY from
-# environment variables -- never hardcode credentials in a script that lives
-# in a public git repo. Safe to leave in: it does nothing once a superuser
-# already exists, so it won't reset anyone's password on later restarts.
-if [ -n "${DJANGO_SUPERUSER_USERNAME:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
-  python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(is_superuser=True).exists():
-    User.objects.create_superuser(
-        '${DJANGO_SUPERUSER_USERNAME}',
-        '${DJANGO_SUPERUSER_EMAIL:-admin@example.com}',
-        '${DJANGO_SUPERUSER_PASSWORD}',
-    )
-    print('Superuser created successfully!')
-else:
-    print('A superuser already exists; skipping creation.')
+# 3. Auto-create your clean admin user safely via Django Shell
+python manage.py shell -c "
+from django.contrib.auth import get_user_model;
+User = get_user_model();
+if not User.objects.filter(username='Madan').exists():
+    User.objects.create_superuser('Madan', 'madandahal0001@gmail.com', 'Pure123456')
+    print('Superuser Madan created successfully!')
 " || true
-else
-  echo "DJANGO_SUPERUSER_USERNAME/PASSWORD not set; skipping superuser auto-creation."
-fi
 
-# Collect static files.
-#
-# --clear is deliberate: STATIC_ROOT is a named volume that outlives the image,
-# and plain collectstatic leaves anything it considers unmodified in place. With
-# CompressedStaticFilesStorage that includes the pre-compressed .gz/.br
-# siblings, so after an upgrade WhiteNoise happily served a previous release's
-# global.js.gz to every browser (which all send Accept-Encoding: gzip) while
-# curl, getting the identity encoding, saw the current file — JS functions
-# "not defined" and half-rendered pages that looked fine to any check that
-# bypassed static serving. Wiping first keeps what we serve equal to the image.
-echo "Collecting static files..."
+# 4. Collect static files
 python manage.py collectstatic --noinput --clear
 
-# Gunicorn workers cache WhiteNoise's static manifest at boot; reload them so
-# the files we just wrote are actually served instead of a stale in-memory
-# manifest from before collectstatic ran.
-if kill -0 "$SERVER_PID" 2>/dev/null; then
-  echo "Reloading server workers to pick up fresh static files..."
-  kill -HUP "$SERVER_PID"
-fi
-
-echo "Startup complete."
-wait "$SERVER_PID"
+echo "Starting server..."
+exec gunicorn horilla.wsgi:application --bind 0.0.0.0:${PORT:-8000}
