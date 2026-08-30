@@ -1,88 +1,54 @@
-# Core Django
-Django==5.2
-django-environ
-psycopg2-binary==2.9.10
+"""
+Template filters for displaying Nepali (Bikram Sambat / BS) dates.
 
-# Django extensions
-django-apscheduler
-django-auditlog
-django-cors-headers
-django-filter
-django-import-export
-django-mathfilters
-django-model-utils
-django-redis==5.4.0
-django-simple-history
-django-storages
-django-widget-tweaks
+This module is purely additive: it does not change how dates are stored,
+validated, or calculated anywhere in the app. It only converts an existing
+AD (Gregorian) date to a BS string for DISPLAY in a template. Every model
+field, form, filter, and date calculation elsewhere in the app is completely
+untouched and keeps working exactly as it does today.
 
-# REST API
-djangorestframework==3.16.0
-djangorestframework-simplejwt==5.5.0
-drf-yasg
+Usage in any template:
+    {% load nepali_date %}
+    {{ employee.dob|to_bs }}                  -> "14 Bhadau 2083"
+    {{ leave_request.start_date|to_bs:"num" }} -> "2083-05-14"
+"""
 
-# Data processing
-numpy
-openpyxl
-pandas
-XlsxWriter
+import datetime
 
-# PDF handling
-pdfkit
-PyMuPDF
-reportlab==4.0.9
-xhtml2pdf
+import nepali_datetime
+from django import template
 
-# Web scraping & HTML
-beautifulsoup4
-requests
-requests-oauthlib
+register = template.Library()
 
-# Google integration
-google-api-python-client
-google-auth-oauthlib
-google-cloud-storage==3.0.0
 
-# Geolocation
-geopy
+@register.filter(name="to_bs")
+def to_bs(value, fmt="text"):
+    """Convert an AD date/datetime to a BS date string.
 
-# Biometric device integration
-pyzk==0.9
+    Returns an empty string for None or values that aren't actually a date,
+    rather than raising -- a date field being blank or a value coming in as
+    the wrong type should never break page rendering.
 
-# Image handling
-pillow
+    fmt="text" (default) -> "14 Bhadau 2083"
+    fmt="num"             -> "2083-05-14"
+    """
+    if value is None:
+        return ""
 
-# Security & encryption
-cryptography==44.0.2
+    # Accept both date and datetime (datetime is a subclass of date, but
+    # from_datetime_date wants a plain date, so normalize here).
+    if isinstance(value, datetime.datetime):
+        value = value.date()
+    if not isinstance(value, datetime.date):
+        return ""
 
-# Notifications
-swapper
+    try:
+        bs_date = nepali_datetime.date.from_datetime_date(value)
+    except Exception:
+        # Conversion library has a defined valid range; anything outside it
+        # (or any unexpected error) degrades to blank rather than a 500.
+        return ""
 
-# Static files
-whitenoise==6.9.0
-
-# Background tasks
-APScheduler
-
-# Date & time
-python-dateutil
-pytz
-nepali_datetime
-
-# Internationalization & NLP
-arabic-reshaper
-click
-phonenumbers==9.0.37
-pycountry==24.6.1
-python-bidi
-rapidfuzz==3.9.6
-spacy==3.7.5
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
-
-# Misc
-bleach==6.2.0
-gunicorn==23.0.0
-packaging
-
-# Testing
-coverage>=7.0
+    if fmt == "num":
+        return bs_date.strftime("%Y-%m-%d")
+    return bs_date.strftime("%d %B %Y")
