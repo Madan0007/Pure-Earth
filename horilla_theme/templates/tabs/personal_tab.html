@@ -270,8 +270,8 @@
                             </div>
                             <div class="flex items-baseline justify-between gap-3 py-2">
                                 <dt class="text-xs font-medium text-color-600">{% trans "End Date" %}</dt>
-                                <dd class="text-right text-sm {% if work_info.contract_end_date %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
-                                    <span class="dateformat_changer">{{ work_info.contract_end_date|default:_("Not set") }}</span>{% if work_info.contract_end_date %} <span class="bs-date">({{ work_info.contract_end_date|to_bs }})</span>{% endif %}
+                                <dd class="text-right text-sm dateformat_changer {% if work_info.contract_end_date %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
+                                    {{ work_info.contract_end_date|default:_("Not set") }}
                                 </dd>
                             </div>
                         </dl>
@@ -408,8 +408,8 @@
                             </div>
                             <div class="flex items-baseline justify-between gap-3 py-2">
                                 <dt class="text-xs font-medium text-color-600">{% trans "Joining Date" %}</dt>
-                                <dd class="text-right text-sm {% if work_info.date_joining %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
-                                    <span class="dateformat_changer">{{ work_info.date_joining|default:_("Not set") }}</span>{% if work_info.date_joining %} <span class="bs-date">({{ work_info.date_joining|to_bs }})</span>{% endif %}
+                                <dd class="text-right text-sm dateformat_changer {% if work_info.date_joining %}font-medium text-dark-500{% else %}italic text-dark-100{% endif %}">
+                                    {{ work_info.date_joining|default:_("Not set") }}
                                 </dd>
                             </div>
                             <div class="flex items-start justify-between gap-3 py-2">
