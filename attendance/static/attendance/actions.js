@@ -1645,7 +1645,7 @@ const NEPALI_CALENDAR_DATA = [
 ];
 
 const NEPALI_MONTH_NAMES = [
-    null, "Baishakh", "Jestha", "Asar", "Shrawan", "Bhadau", "Aswin",
+    null, "Baishakh", "Jestha", "Asar", "Shrawan", "Bhadra", "Aswin",
     "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
 ];
 
