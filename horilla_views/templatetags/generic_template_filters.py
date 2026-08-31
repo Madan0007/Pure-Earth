@@ -50,6 +50,27 @@ time_format_mapping = {
     "HH:mm": "%H:%M",
 }
 
+# nepali_datetime's own strftime("%B") ships with a typo ("Bhadau" instead of
+# "Bhadra") baked into its _FULLMONTHNAMES constant -- even the library's own
+# calendar_bs.csv data file spells it "Bhadra". Rather than depend on that,
+# we keep the correct spellings here and build the month name ourselves.
+# Kept in sync with base/templatetags/nepali_date.py.
+BS_MONTH_NAMES = (
+    None,
+    "Baishakh",
+    "Jestha",
+    "Asar",
+    "Shrawan",
+    "Bhadra",
+    "Aswin",
+    "Kartik",
+    "Mangsir",
+    "Poush",
+    "Magh",
+    "Falgun",
+    "Chaitra",
+)
+
 
 def _with_bs_date(formatted_text, value) -> str:
     """Append a "(BS date)" suffix to an already-formatted AD date string.
@@ -64,7 +85,8 @@ def _with_bs_date(formatted_text, value) -> str:
         if not isinstance(plain_date, datetime.date):
             return formatted_text
         bs_date = nepali_datetime.date.from_datetime_date(plain_date)
-        return f"{formatted_text} ({bs_date.strftime('%d %B %Y')})"
+        bs_text = f"{bs_date.day:02d} {BS_MONTH_NAMES[bs_date.month]} {bs_date.year}"
+        return f"{formatted_text} ({bs_text})"
     except Exception:
         return formatted_text
 
