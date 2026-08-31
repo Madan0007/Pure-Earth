@@ -11,6 +11,7 @@ import json
 import re
 import types
 
+import nepali_datetime
 from django import template
 from django.conf import settings
 from django.contrib.auth.context_processors import PermWrapper
@@ -50,6 +51,24 @@ time_format_mapping = {
 }
 
 
+def _with_bs_date(formatted_text, value) -> str:
+    """Append a "(BS date)" suffix to an already-formatted AD date string.
+
+    Purely additive and defensive: returns the original text unchanged for
+    anything that isn't cleanly convertible (out of the supported calendar
+    range, wrong type, etc.) rather than ever raising, since this runs on
+    every date cell across dozens of generic list/detail/card views.
+    """
+    try:
+        plain_date = value.date() if isinstance(value, datetime.datetime) else value
+        if not isinstance(plain_date, datetime.date):
+            return formatted_text
+        bs_date = nepali_datetime.date.from_datetime_date(plain_date)
+        return f"{formatted_text} ({bs_date.strftime('%d %B %Y')})"
+    except Exception:
+        return formatted_text
+
+
 @register.filter(name="selected_format")
 def selected_format(date, company: object = None) -> str:
     if not isinstance(date, (datetime.date, datetime.time)):
@@ -61,10 +80,12 @@ def selected_format(date, company: object = None) -> str:
         if isinstance(date, datetime.date):
             format = company.date_format if company.date_format else "MMM. D, YYYY"
             date_format_mapping.get(format)
-            return date.strftime(date_format_mapping[format])
+            return _with_bs_date(date.strftime(date_format_mapping[format]), date)
         elif isinstance(date, datetime.time):
             format = company.time_format if company.time_format else "hh:mm A"
             return date.strftime(time_format_mapping[format])
+    if isinstance(date, datetime.date):
+        return _with_bs_date(str(date), date)
     return date
 
 
