@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     # Third-party apps
-    "anymail",
     "notifications",
     "mathfilters",
     "corsheaders",
@@ -390,12 +389,7 @@ AUDITLOG_EXCLUDE_TRACKING_MODELS = (
     # "<app_name>.<model>"
 )
 
-EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
-
-ANYMAIL = {
-    "BREVO_API_KEY": env("BREVO_API_KEY", default=""),
-}
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="madandahal0001@gmail.com")
+EMAIL_BACKEND = "base.backends.ConfiguredEmailBackend"
 
 """
 DB_INIT_PASSWORD: str
