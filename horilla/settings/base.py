@@ -389,7 +389,7 @@ AUDITLOG_EXCLUDE_TRACKING_MODELS = (
     # "<app_name>.<model>"
 )
 
-EMAIL_BACKEND = "base.backends.ConfiguredEmailBackend"
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
 """
 DB_INIT_PASSWORD: str
