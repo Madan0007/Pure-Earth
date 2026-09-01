@@ -86,3 +86,6 @@ packaging
 
 # Testing
 coverage>=7.0
+
+#Mail
+django-anymail
